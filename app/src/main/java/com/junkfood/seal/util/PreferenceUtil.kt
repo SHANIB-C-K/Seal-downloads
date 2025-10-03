@@ -34,6 +34,7 @@ import kotlinx.serialization.json.Json
 
 const val CUSTOM_COMMAND = "custom_command"
 const val CONCURRENT = "concurrent_fragments"
+const val MAX_CONCURRENT_DOWNLOADS = "max_concurrent_downloads"
 const val EXTRACT_AUDIO = "extract_audio"
 const val THUMBNAIL = "create_thumbnail"
 const val YT_DLP_VERSION = "yt-dlp_init"
@@ -224,6 +225,7 @@ private val IntPreferenceDefaults =
     mapOf(
         TEMPLATE_ID to 0,
         CONCURRENT to 8,
+        MAX_CONCURRENT_DOWNLOADS to 3,
         LANGUAGE to SYSTEM_DEFAULT,
         PALETTE_STYLE to 0,
         DARK_THEME_VALUE to DarkThemePreference.FOLLOW_SYSTEM,

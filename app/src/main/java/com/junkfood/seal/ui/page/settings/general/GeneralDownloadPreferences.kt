@@ -87,14 +87,17 @@ import com.junkfood.seal.util.DEBUG
 import com.junkfood.seal.util.DISABLE_PREVIEW
 import com.junkfood.seal.util.DOWNLOAD_ARCHIVE
 import com.junkfood.seal.util.FileUtil.getArchiveFile
+import com.junkfood.seal.util.MAX_CONCURRENT_DOWNLOADS
 import com.junkfood.seal.util.NOTIFICATION
 import com.junkfood.seal.util.NotificationUtil
 import com.junkfood.seal.util.PLAYLIST
 import com.junkfood.seal.util.PRIVATE_MODE
 import com.junkfood.seal.util.PreferenceUtil
 import com.junkfood.seal.util.PreferenceUtil.getBoolean
+import com.junkfood.seal.util.PreferenceUtil.getInt
 import com.junkfood.seal.util.PreferenceUtil.getString
 import com.junkfood.seal.util.PreferenceUtil.updateBoolean
+import com.junkfood.seal.util.PreferenceUtil.updateInt
 import com.junkfood.seal.util.SPONSORBLOCK
 import com.junkfood.seal.util.SUBTITLE
 import com.junkfood.seal.util.THUMBNAIL
@@ -339,6 +342,26 @@ fun GeneralDownloadPreferences(onNavigateBack: () -> Unit, navigateToTemplate: (
                 }
 
                 item { PreferenceSubtitle(text = stringResource(R.string.advanced_settings)) }
+                
+                item {
+                    var showConcurrencyDialog by remember { mutableStateOf(false) }
+                    var maxConcurrentDownloads by remember { mutableStateOf(MAX_CONCURRENT_DOWNLOADS.getInt()) }
+                    
+                    PreferenceItem(
+                        title = stringResource(R.string.max_concurrent_downloads),
+                        description = stringResource(R.string.max_concurrent_downloads_desc, maxConcurrentDownloads),
+                        icon = Icons.Outlined.DoneAll,
+                        onClick = { showConcurrencyDialog = true }
+                    )
+                    
+                    if (showConcurrencyDialog) {
+                        ConcurrentDownloadsDialog(
+                            onDismissRequest = { showConcurrencyDialog = false },
+                            onValueChanged = { newValue -> maxConcurrentDownloads = newValue }
+                        )
+                    }
+                }
+                
                 item {
                     PreferenceSwitch(
                         title = stringResource(id = R.string.download_playlist),
@@ -529,6 +552,67 @@ fun DownloadArchiveDialog(
                     minLines = 10,
                     maxLines = 10,
                 )
+            }
+        },
+    )
+}
+
+@Composable
+fun ConcurrentDownloadsDialog(
+    onDismissRequest: () -> Unit,
+    onValueChanged: (Int) -> Unit = {},
+) {
+    var selectedValue: Int by remember { 
+        mutableStateOf(MAX_CONCURRENT_DOWNLOADS.getInt()) 
+    }
+    val options = listOf(1, 2, 3, 4, 5, 6)
+    
+    SealDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            ConfirmButton(text = stringResource(id = R.string.confirm)) {
+                MAX_CONCURRENT_DOWNLOADS.updateInt(selectedValue)
+                onValueChanged(selectedValue)
+                onDismissRequest()
+            }
+        },
+        dismissButton = { DismissButton { onDismissRequest() } },
+        icon = { Icon(imageVector = Icons.Outlined.DoneAll, contentDescription = null) },
+        title = { Text(text = stringResource(R.string.max_concurrent_downloads)) },
+        text = {
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(
+                    text = stringResource(R.string.max_concurrent_downloads_dialog_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selectedValue == option,
+                                onClick = { selectedValue = option }
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedValue == option,
+                            onClick = { selectedValue = option }
+                        )
+                        Text(
+                            text = if (option == 1) {
+                                stringResource(R.string.concurrent_downloads_single, option)
+                            } else {
+                                stringResource(R.string.concurrent_downloads_multiple, option)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
             }
         },
     )
