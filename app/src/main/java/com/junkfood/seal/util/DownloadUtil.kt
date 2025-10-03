@@ -34,6 +34,8 @@ import com.junkfood.seal.util.PreferenceUtil.getBoolean
 import com.junkfood.seal.util.PreferenceUtil.getInt
 import com.junkfood.seal.util.PreferenceUtil.getString
 import com.junkfood.seal.util.PreferenceUtil.updateBoolean
+import com.junkfood.seal.util.SecurityUtil.isValidUrl
+import com.junkfood.seal.util.SecurityUtil.sanitizeCommandInput
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -89,6 +91,10 @@ object DownloadUtil {
         downloadPreferences: DownloadPreferences = DownloadPreferences.createFromPreferences(),
     ): Result<YoutubeDLInfo> =
         YoutubeDL.runCatching {
+            // Security validation
+            if (!isValidUrl(playlistURL)) {
+                throw IllegalArgumentException("Invalid URL format: $playlistURL")
+            }
             ToastUtil.makeToastSuspend(context.getString(R.string.fetching_playlist_info))
             val request = YoutubeDLRequest(playlistURL)
             with(request) {
@@ -880,7 +886,16 @@ object DownloadUtil {
         preferences: DownloadPreferences,
         progressCallback: ((Float, Long, String) -> Unit),
     ): Result<YoutubeDLResponse> {
-        val urlList = urlString.split(Regex("[\n ]")).filter { it.isNotBlank() }
+        // Security validation - sanitize input
+        val sanitizedUrlString = sanitizeCommandInput(urlString)
+        val urlList = sanitizedUrlString.split(Regex("[\n ]")).filter { it.isNotBlank() }
+        
+        // Validate each URL
+        urlList.forEach { url ->
+            if (!isValidUrl(url)) {
+                return Result.failure(IllegalArgumentException("Invalid URL: $url"))
+            }
+        }
 
         val request =
             with(preferences) {

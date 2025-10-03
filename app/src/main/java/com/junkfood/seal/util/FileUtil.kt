@@ -14,6 +14,8 @@ import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import com.junkfood.seal.App.Companion.context
 import com.junkfood.seal.R
+import com.junkfood.seal.util.SecurityUtil.isValidFilePath
+import com.junkfood.seal.util.SecurityUtil.sanitizeFilename
 import java.io.File
 import okhttp3.internal.closeQuietly
 
@@ -34,6 +36,10 @@ object FileUtil {
     inline fun openFile(path: String, onFailureCallback: (Throwable) -> Unit) =
         path
             .runCatching {
+                // Security validation
+                if (!isValidFilePath(this)) {
+                    throw SecurityException("Invalid file path: $this")
+                }
                 createIntentForOpeningFile(this)?.run { context.startActivity(this) }
                     ?: throw Exception()
             }
@@ -93,9 +99,11 @@ object FileUtil {
 
     fun String.getFileName(): String =
         this.run {
-            File(this).nameWithoutExtension.ifEmpty {
+            val fileName = File(this).nameWithoutExtension.ifEmpty {
                 DocumentFile.fromSingleUri(context, Uri.parse(this))?.name ?: "video"
             }
+            // Sanitize filename for security
+            sanitizeFilename(fileName)
         }
 
     fun deleteFile(path: String) =

@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- Restrict to specific directories for better security -->
     <external-path
+        name="external_downloads"
+        path="Download/Seal" />
+    <external-files-path
         name="external_files"
         path="." />
     <cache-path
         name="cache"
+        path="." />
+    <files-path
+        name="internal_files"
         path="." />
 </paths>

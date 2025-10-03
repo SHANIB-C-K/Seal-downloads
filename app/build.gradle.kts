@@ -96,6 +96,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -103,6 +104,10 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("githubPublish")
             }
+            
+            // Additional security configurations
+            buildConfigField("boolean", "DEBUG_MODE", "false")
+            manifestPlaceholders["allowBackup"] = false
         }
         debug {
             if (keystorePropertiesFile.exists()) {
@@ -111,6 +116,10 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             resValue("string", "app_name", "Seal Debug")
+            
+            // Debug security configurations
+            buildConfigField("boolean", "DEBUG_MODE", "true")
+            manifestPlaceholders["allowBackup"] = true
         }
     }
 

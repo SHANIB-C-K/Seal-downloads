@@ -22,7 +22,23 @@
 
 #noinspection ShrinkerUnresolvedReference
 
--dontobfuscate
+# Enable obfuscation for better security
+# -dontobfuscate
+
+# Keep only essential classes from obfuscation
+-keep class com.junkfood.seal.App { *; }
+-keep class com.junkfood.seal.MainActivity { *; }
+-keep class com.junkfood.seal.QuickDownloadActivity { *; }
+-keep class com.junkfood.seal.CrashReportActivity { *; }
+-keep class com.junkfood.seal.DownloadService { *; }
+
+# Keep data classes and serializable classes
+-keep class com.junkfood.seal.database.** { *; }
+-keep class com.junkfood.seal.ui.page.settings.network.Cookie { *; }
+
+# Additional security: Remove debug information in release builds
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
 -keep class com.yausername.** { *; }
 -keep class org.apache.commons.compress.archivers.zip.** { *; }
