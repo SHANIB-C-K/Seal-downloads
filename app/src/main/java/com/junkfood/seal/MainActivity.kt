@@ -14,6 +14,7 @@ import com.junkfood.seal.ui.common.SettingsProvider
 import com.junkfood.seal.ui.page.AppEntry
 import com.junkfood.seal.ui.page.downloadv2.configure.DownloadDialogViewModel
 import com.junkfood.seal.ui.theme.SealTheme
+import com.junkfood.seal.ui.theme.ModernSealTheme
 import com.junkfood.seal.util.PreferenceUtil
 import com.junkfood.seal.util.matchUrlFromSharedText
 import com.junkfood.seal.util.setLanguage
@@ -38,9 +39,9 @@ class MainActivity : AppCompatActivity() {
             KoinContext {
                 val windowSizeClass = calculateWindowSizeClass(this)
                 SettingsProvider(windowWidthSizeClass = windowSizeClass.widthSizeClass) {
-                    SealTheme(
+                    ModernSealTheme(
                         darkTheme = LocalDarkTheme.current.isDarkTheme(),
-                        isHighContrastModeEnabled = LocalDarkTheme.current.isHighContrastModeEnabled,
+                        dynamicColor = true
                     ) {
                         AppEntry(dialogViewModel = dialogViewModel)
                     }
