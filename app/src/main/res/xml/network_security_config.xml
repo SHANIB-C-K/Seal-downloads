@@ -1,12 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Critical domains with certificate pinning -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">api.github.com</domain>
         <domain includeSubdomains="true">github.com</domain>
+        <pin-set expiration="2026-01-01">
+            <!-- GitHub primary certificate (DigiCert) -->
+            <pin digest="SHA-256">WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=</pin>
+            <!-- GitHub backup certificate -->
+            <pin digest="SHA-256">RRM1dGqnDFsCJXBTHky16vi1obOlCgFFn/yOhI/y+ho=</pin>
+            <!-- DigiCert Global Root CA -->
+            <pin digest="SHA-256">r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E=</pin>
+            <!-- DigiCert backup -->
+            <pin digest="SHA-256">i7WTqTvh0OioIruIfFR4kMPnBqrS2rdiVPl/s2uC/CY=</pin>
+        </pin-set>
+    </domain-config>
+    
+    <!-- Other supported domains -->
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">youtube.com</domain>
         <domain includeSubdomains="true">youtu.be</domain>
         <domain includeSubdomains="true">googlevideo.com</domain>
         <domain includeSubdomains="true">ytimg.com</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
     </domain-config>
     
     <!-- Default configuration for other domains -->

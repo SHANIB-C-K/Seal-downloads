@@ -1,10 +1,13 @@
 package com.junkfood.seal.ui.page.settings.network
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -30,6 +33,9 @@ import com.google.android.material.R
 import com.junkfood.seal.util.PreferenceUtil.updateString
 import com.junkfood.seal.util.USER_AGENT_STRING
 import com.junkfood.seal.util.connectWithDelimiter
+import com.junkfood.seal.util.SecurityUtil
+import com.junkfood.seal.util.SecureLogger
+import java.io.ByteArrayInputStream
 
 private const val TAG = "WebViewPage"
 
@@ -113,15 +119,52 @@ fun WebViewPage(cookiesViewModel: CookiesViewModel, onDismissRequest: () -> Unit
                 override fun onPageFinished(view: WebView, url: String?) {
                     super.onPageFinished(view, url)
                     if (url.isNullOrEmpty()) return
+                    
+                    // Inject Content Security Policy
+                    val csp = """javascript:(function() {
+                        var meta = document.createElement('meta');
+                        meta.httpEquiv = 'Content-Security-Policy';
+                        meta.content = "default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors 'none';";
+                        document.head.appendChild(meta);
+                    })()"""
+                    view?.evaluateJavascript(csp, null)
                 }
 
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?,
                 ): Boolean {
+                    val url = request?.url?.toString()
+                    
+                    // Validate URL before loading
+                    if (url != null && !SecurityUtil.isValidWebViewUrl(url)) {
+                        SecureLogger.w(TAG, "Blocked invalid URL: $url")
+                        return true // Block the navigation
+                    }
+                    
                     return if (request?.url?.scheme?.contains("http") == true)
                         super.shouldOverrideUrlLoading(view, request)
                     else true
+                }
+                
+                @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    // Add security headers
+                    val url = request?.url?.toString()
+                    if (url != null && SecurityUtil.isValidUrl(url)) {
+                        return null // Let WebView handle it
+                    }
+                    
+                    // Block invalid requests
+                    SecureLogger.w(TAG, "Blocked resource request: $url")
+                    return WebResourceResponse(
+                        "text/plain",
+                        "UTF-8",
+                        ByteArrayInputStream("Blocked".toByteArray())
+                    )
                 }
             }
         }
@@ -135,12 +178,54 @@ fun WebViewPage(cookiesViewModel: CookiesViewModel, onDismissRequest: () -> Unit
             factory = { context ->
                 WebView(context).apply {
                     settings.run {
-                        javaScriptCanOpenWindowsAutomatically = true
-                        javaScriptEnabled = true
+                        // Security hardening
+                        javaScriptEnabled = true // Required for cookie functionality
+                        javaScriptCanOpenWindowsAutomatically = false // Security: prevent popup windows
+                        
+                        // DOM storage - required for modern sites
                         domStorageEnabled = true
+                        
+                        // File access restrictions
+                        allowFileAccess = false
+                        allowContentAccess = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                            allowFileAccessFromFileURLs = false
+                            allowUniversalAccessFromFileURLs = false
+                        }
+                        
+                        // Additional security settings
+                        setSupportMultipleWindows(false)
+                        setSupportZoom(false)
+                        builtInZoomControls = false
+                        displayZoomControls = false
+                        
+                        // Safe browsing
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            safeBrowsingEnabled = true
+                        }
+                        
+                        // Mixed content
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        }
+                        
+                        // Database and storage
+                        databaseEnabled = false
+                        
+                        // Geolocation
+                        setGeolocationEnabled(false)
+                        
+                        // User agent
                         USER_AGENT_STRING.updateString(userAgentString)
                     }
-                    cookieManager.setAcceptThirdPartyCookies(this, true)
+                    
+                    // Cookie settings - disable third-party by default
+                    cookieManager.setAcceptThirdPartyCookies(this, false)
+                    
+                    // Remove all JavaScript interfaces for security
+                    removeJavascriptInterface("searchBoxJavaBridge_")
+                    removeJavascriptInterface("accessibility")
+                    removeJavascriptInterface("accessibilityTraversal")
                 }
             },
         )

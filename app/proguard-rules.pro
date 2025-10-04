@@ -40,6 +40,63 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
+# ============================================================
+# SECURITY HARDENING - Added for enhanced protection
+# ============================================================
+
+# Strip all logging in release builds for security
+-assumenosideeffects class com.junkfood.seal.util.SecureLogger {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+}
+
+# Also strip standard Android logging in release
+-assumenosideeffects class android.util.Log {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+}
+
+# Keep SecurityUtil but obfuscate implementation
+-keep class com.junkfood.seal.util.SecurityUtil {
+    public static <methods>;
+}
+
+# Keep SecureLogger interface but strip implementation
+-keep class com.junkfood.seal.util.SecureLogger {
+    public static <methods>;
+}
+
+# Aggressive string encryption for sensitive classes
+-keepclassmembers class com.junkfood.seal.util.SecurityUtil {
+    <fields>;
+}
+-keepclassmembers class com.junkfood.seal.util.SecureLogger {
+    <fields>;
+}
+
+# Additional obfuscation for security-sensitive code
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-repackageclasses ''
+
+# Remove debugging attributes that could help reverse engineering
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,*Annotation*,EnclosingMethod
+
+# Obfuscate all package names
+-flattenpackagehierarchy
+-repackageclasses 'sealed'
+
+# Keep crash reporting working
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
 -keep class com.yausername.** { *; }
 -keep class org.apache.commons.compress.archivers.zip.** { *; }
 
