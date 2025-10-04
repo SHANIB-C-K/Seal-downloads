@@ -21,9 +21,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.junkfood.seal.ui.design.Gradients
+import com.junkfood.seal.ui.design.LocalElevation
+import com.junkfood.seal.ui.design.LocalSpacing
+import com.junkfood.seal.ui.design.Motion
 
 /**
- * Modern button component with gradient background and animations
+ * Modern button component with gradient background and smooth animations
+ * Utilizes design tokens for consistent spacing and elevation
  * Created by shanib c k
  */
 @Composable
@@ -36,11 +41,13 @@ fun ModernButton(
     style: ModernButtonStyle = ModernButtonStyle.Primary,
     size: ModernButtonSize = ModernButtonSize.Medium
 ) {
+    val spacing = LocalSpacing.current
+    val elevation = LocalElevation.current
     var isPressed by remember { mutableStateOf(false) }
     
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f),
+        animationSpec = Motion.scaleAnimation,
         label = "button_scale"
     )
     
@@ -61,40 +68,40 @@ fun ModernButton(
     )
     
     val padding = when (size) {
-        ModernButtonSize.Small -> PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ModernButtonSize.Medium -> PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-        ModernButtonSize.Large -> PaddingValues(horizontal = 32.dp, vertical = 16.dp)
+        ModernButtonSize.Small -> PaddingValues(
+            horizontal = spacing.default, 
+            vertical = spacing.small
+        )
+        ModernButtonSize.Medium -> PaddingValues(
+            horizontal = spacing.extraLarge, 
+            vertical = spacing.medium
+        )
+        ModernButtonSize.Large -> PaddingValues(
+            horizontal = spacing.huge, 
+            vertical = spacing.default
+        )
+    }
+    
+    val cornerRadius = when (size) {
+        ModernButtonSize.Small -> 12.dp
+        ModernButtonSize.Medium -> 16.dp
+        ModernButtonSize.Large -> 20.dp
     }
 
     Box(
         modifier = modifier
             .scale(scale)
             .shadow(
-                elevation = if (isPressed) 2.dp else 6.dp,
-                shape = RoundedCornerShape(16.dp),
+                elevation = if (isPressed) elevation.level2 else elevation.level4,
+                shape = RoundedCornerShape(cornerRadius),
                 ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(
                 brush = when (style) {
-                    ModernButtonStyle.Primary -> Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                        )
-                    )
-                    ModernButtonStyle.Secondary -> Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.secondary,
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
-                        )
-                    )
-                    ModernButtonStyle.Outline -> Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surface
-                        )
-                    )
+                    ModernButtonStyle.Primary -> Gradients.primaryGradient()
+                    ModernButtonStyle.Secondary -> Gradients.secondaryGradient()
+                    ModernButtonStyle.Outline -> Gradients.surfaceGradient()
                 }
             )
             .clickable(
@@ -109,7 +116,7 @@ fun ModernButton(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             if (icon != null) {
                 Icon(
@@ -143,7 +150,7 @@ fun ModernButton(
     
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            kotlinx.coroutines.delay(100)
+            kotlinx.coroutines.delay(Motion.DURATION_QUICK.toLong())
             isPressed = false
         }
     }

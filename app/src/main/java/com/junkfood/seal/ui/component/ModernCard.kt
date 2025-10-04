@@ -21,9 +21,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.junkfood.seal.ui.design.Gradients
+import com.junkfood.seal.ui.design.LocalElevation
+import com.junkfood.seal.ui.design.LocalSpacing
+import com.junkfood.seal.ui.design.Motion
 
 /**
- * Modern card component with enhanced visual design
+ * Modern card component with enhanced visual design and smooth interactions
+ * Utilizes design tokens for consistent spacing and elevation
  * Created by shanib c k
  */
 @Composable
@@ -37,11 +42,13 @@ fun ModernCard(
     colors: ModernCardColors = ModernCardDefaults.colors(),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val spacing = LocalSpacing.current
+    val elevation = LocalElevation.current
     var isPressed by remember { mutableStateOf(false) }
     
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f),
+        animationSpec = Motion.scaleAnimation,
         label = "card_scale"
     )
     
@@ -59,8 +66,8 @@ fun ModernCard(
         modifier = modifier
             .scale(scale)
             .shadow(
-                elevation = if (isPressed) 2.dp else 8.dp,
-                shape = RoundedCornerShape(20.dp),
+                elevation = if (isPressed) elevation.level2 else elevation.level5,
+                shape = RoundedCornerShape(spacing.large),
                 ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             )
             .then(
@@ -74,7 +81,7 @@ fun ModernCard(
                     )
                 } else Modifier
             ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(spacing.large),
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = contentColor
@@ -84,27 +91,20 @@ fun ModernCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            containerColor,
-                            containerColor.copy(alpha = 0.95f)
-                        )
-                    )
-                )
-                .padding(20.dp)
+                .background(brush = Gradients.cardGradient())
+                .padding(spacing.large)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(spacing.default)
             ) {
                 if (icon != null) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(spacing.colossal)
                             .background(
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(spacing.medium)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -112,7 +112,7 @@ fun ModernCard(
                             imageVector = icon,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(spacing.extraLarge)
                         )
                     }
                 }
@@ -128,7 +128,7 @@ fun ModernCard(
                     )
                     
                     if (subtitle != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(spacing.extraSmall))
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodyMedium,
@@ -139,7 +139,7 @@ fun ModernCard(
             }
             
             if (content != {}) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(spacing.default))
                 content()
             }
         }
@@ -147,7 +147,7 @@ fun ModernCard(
     
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            kotlinx.coroutines.delay(100)
+            kotlinx.coroutines.delay(Motion.DURATION_QUICK.toLong())
             isPressed = false
         }
     }
